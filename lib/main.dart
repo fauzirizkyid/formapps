@@ -104,7 +104,7 @@ final demos = [
     route: 'signin_http',
     builder: (context) => SignInHttpDemo(
       // This sample uses a mock HTTP client.
-      httpClient: mockClient,
+      httpClient: mockClient, attemptCount: 1,
     ),
   ),
   Demo(

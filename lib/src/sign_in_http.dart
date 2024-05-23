@@ -2,10 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:form_app/main.dart';
+import 'package:form_app/src/repository/sign_in_repository.dart';
 import 'package:form_app/src/validator/validator.dart';
 import 'package:http/http.dart' as http;
 import 'package:json_annotation/json_annotation.dart';
@@ -30,10 +28,12 @@ class FormData {
 
 class SignInHttpDemo extends StatefulWidget {
   final http.Client? httpClient;
+  final int attemptCount;
 
   const SignInHttpDemo({
     this.httpClient,
     super.key,
+    required this.attemptCount,
   });
 
   @override
@@ -46,6 +46,7 @@ class _SignInHttpDemoState extends State<SignInHttpDemo> {
   final _signInFormKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  late int trySignIn;
 
   String? _emailError;
   String? _passwordError;
@@ -54,6 +55,7 @@ class _SignInHttpDemoState extends State<SignInHttpDemo> {
   void initState() {
     _emailController.addListener(_emailValidation);
     _passwordController.addListener(_validatePassword);
+    trySignIn = widget.attemptCount;
     super.initState();
   }
 
@@ -130,32 +132,15 @@ class _SignInHttpDemoState extends State<SignInHttpDemo> {
                     child: const Text('Sign in'),
                     onPressed: () async {
                       if (_signInFormKey.currentState!.validate()) {
-                        final response = await http.post(
-                          Uri.parse('https://dummyjson.com/auth/login'),
-                          body: {
-                            // 'username': formData.email,
-                            // 'password': formData.password,
-                            'username': 'kminchelle',
-                            'password': '0lelplR',
-                          },
+                        final response = await Authentication.login(
+                          'kminchelle',
+                          '0lelplR',
                         );
 
-                        final header = response.headers;
-                        final request = response.request;
-                        final statusCode = response.statusCode;
-                        final body = jsonDecode(response.body);
-
-                        alice.onHttpResponse(response);
-                        logger.w(header);
-                        logger.i("statusCode: $statusCode");
-                        logger.f(request);
-                        logger.d(body);
-                        logger.e(body);
-
                         _showDialog(
-                          switch (response.statusCode) {
+                          switch (response['code']) {
                             200 => 'Successfully signed in.',
-                            400 => '${body['message']}',
+                            400 => '${response['body']['message']}',
                             401 => 'Unable to sign in.',
                             _ => 'Something went wrong. Please try again.'
                           },
@@ -170,6 +155,7 @@ class _SignInHttpDemoState extends State<SignInHttpDemo> {
                       // );
                     },
                   ),
+                  Text('You have tried $trySignIn times')
                 ].expand(
                   (widget) => [
                     widget,
